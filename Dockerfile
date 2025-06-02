@@ -1,29 +1,30 @@
-FROM ubuntu:latest
+# ---- Build Stage ----
+FROM ubuntu:latest AS build
 
-# Install dependencies
-RUN apt-get update
-RUN apt-get install -y gcc-10 g++-10 cmake ninja-build git
+RUN apt-get update && \
+    apt-get install -y gcc-10 g++-10 cmake ninja-build git && \
+    rm -rf /var/lib/apt/lists/*
 
-# add cmakelists and 307lib to cache dependencies
 WORKDIR /app
-ADD CMakeLists.txt /app/CMakeLists.txt
-ADD CMakePresets.json /app/CMakePresets.json
+
+ADD CMakeLists.txt CMakePresets.json /app/
 ADD 307lib /app/307lib
 ADD ARRCON /app/ARRCON
 
-# configure cmake
 ENV CC=gcc-10
 ENV CXX=g++-10
-RUN cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja
 
-# add the rest of the files
-ADD . /app
+RUN cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja && \
+    cmake --build build --config Release
 
-# run the build
-RUN cmake --build build --config Release
+# ---- Runtime Stage ----
+FROM ubuntu:latest
 
-RUN cp ./build/ARRCON/ARRCON /usr/local/bin/arrcon
-RUN chmod +x /usr/local/bin/arrcon
+# Only copy the built binary from the build stage
+COPY --from=build /app/build/ARRCON/ARRCON /usr/local/bin/arrcon
+
+# (Optional) Install runtime dependencies if needed
+# RUN apt-get update && apt-get install -y <runtime-deps> && rm -rf /var/lib/apt/lists/*
 
 ENTRYPOINT ["/usr/local/bin/arrcon"]
 CMD ["--help"]
