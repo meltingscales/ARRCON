@@ -2,10 +2,14 @@
 
     docker build -t henryfbp/arrcon:latest ./
 
-# Testing
+# Running
 
     docker run -it henryfbp/arrcon:latest ARRCON --help
 
 # Pushing/publishing (author only)
 
     docker push henryfbp/arrcon:latest
+
+# Pulling
+
+    docker pull henryfbp/arrcon:latest
